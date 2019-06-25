@@ -43,7 +43,7 @@ func RestartEdgeNodePodsToUseQuicProtocol() error {
 			err := utils.PrintCombinedOutput(cmd)
 			Expect(err).Should(BeNil())
 			//Create ConfigMaps for Each EdgeNode created
-			go utils.HandleConfigmap(chconfigmapRet, http.MethodPatch, ctx.Cfg.K8SMasterForProvisionEdgeNodes+ConfigmapHandler+"/"+conf[0], true)
+			go HandleConfigmap(chconfigmapRet, http.MethodPatch, ctx.Cfg.K8SMasterForProvisionEdgeNodes+ConfigmapHandler+"/"+conf[0], true)
 			ret := <-chconfigmapRet
 			Expect(ret).To(BeNil())
 		}

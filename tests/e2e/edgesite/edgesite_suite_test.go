@@ -17,7 +17,6 @@ limitations under the License.
 package edgesite
 
 import (
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -40,36 +39,16 @@ func TestEdgecoreAppDeployment(t *testing.T) {
 	RegisterFailHandler(Fail)
 	var _ = BeforeSuite(func() {
 		utils.InfoV6("Before Suite Execution")
-		//cfg = utils.LoadConfig()
 		ctx = utils.NewTestContext(utils.LoadConfig())
-		//Expect(utils.CleanUp("edgesite")).Should(BeNil())
-		nodeName = "integration-node-" + utils.GetRandomString(10)
+		nodeName = "edgesite-node-" + utils.GetRandomString(10)
 		nodeSelector = "node-" + utils.GetRandomString(3)
-		Expect(utils.DeploySetup(ctx, nodeName, "edgesite")).Should(BeNil())
-		Expect(utils.StartEdgeSite()).Should(BeNil())
-
-		Expect(utils.RegisterNodeToMaster(nodeName, ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeSelector)).Should(BeNil())
-
-		//Check node successfully registered or not
-		Eventually(func() string {
-			status := utils.CheckNodeReadyStatus(ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName)
-			utils.Info("Node Name: %v, Node Status: %v", nodeName, status)
-			return status
-		}, "60s", "4s").Should(Equal("Running"), "Node register to the k8s master is unsuccessfull !!")
-
+		utils.CreateConfigMapforEdgeSite(ctx.Cfg.K8SMasterForKubeEdge+constants.ConfigmapHandler, ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName,nodeSelector)
+		utils.HandleEdgeSitePodDeployment(ctx.Cfg.K8SMasterForKubeEdge+constants.DeploymentHandler, ctx.Cfg.EdgeSiteImageUrl, ctx.Cfg.K8SMasterForKubeEdge+constants.AppHandler, ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName)
 	})
 
 	AfterSuite(func() {
 		By("After Suite Execution....!")
-		//Deregister the edge node from master
-		Expect(utils.DeRegisterNodeFromMaster(ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName)).Should(BeNil())
-
-		Eventually(func() int {
-			statuscode := utils.CheckNodeDeleteStatus(ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName)
-			utils.Info("Node Name: %v, Node Statuscode: %v", nodeName, statuscode)
-			return statuscode
-		}, "60s", "4s").Should(Equal(http.StatusNotFound), "Node register to the k8s master is unsuccessfull !!")
-		//Run the Cleanup steps to kill edgecore and edgecontroller binaries
+		utils.DeleteEdgeSiteDeployments(ctx.Cfg.K8SMasterForKubeEdge)
 		Expect(utils.CleanUp("edgesite")).Should(BeNil())
 		//time.Sleep(2 * time.Second)
 		utils.Info("Cleanup is Successfull !!")
