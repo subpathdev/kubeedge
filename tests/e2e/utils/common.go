@@ -194,9 +194,9 @@ func edgecoreDeploymentSpec(imgURL, configmap string, replicas int, nodeSelector
 								v1.ResourceName(v1.ResourceMemory): resource.MustParse("100Mi"),
 							},
 						},
-						Ports:        portInfo,
-						Env:          []v1.EnvVar{{Name: "DOCKER_HOST", Value: "tcp://localhost:2375"}},
-						VolumeMounts: []v1.VolumeMount{{Name: "cert", MountPath: "/etc/kubeedge/certs"}, {Name: "conf", MountPath: "/etc/kubeedge/edge/conf"}},
+						Ports: portInfo,
+						VolumeMounts: []v1.VolumeMount{{Name: "cert", MountPath: "/etc/kubeedge/certs"}, {Name: "conf", MountPath: "/etc/kubeedge/edge/conf"},
+							{Name: "docker-sock", MountPath: "/var/run/docker.sock"}},
 					}, {
 						Name:            "dind-daemon",
 						SecurityContext: &v1.SecurityContext{Privileged: &IsSecureCtx},
@@ -215,6 +215,7 @@ func edgecoreDeploymentSpec(imgURL, configmap string, replicas int, nodeSelector
 					{Name: "cert", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/etc/kubeedge/certs"}}},
 					{Name: "conf", VolumeSource: v1.VolumeSource{ConfigMap: &v1.ConfigMapVolumeSource{LocalObjectReference: v1.LocalObjectReference{Name: configmap}}}},
 					{Name: "docker-graph-storage", VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}}},
+					{Name: "docker-sock", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
 				},
 			},
 		},
@@ -252,9 +253,10 @@ func edgesiteDeploymentSpec(imgURL, configmap string, replicas int, nodeSelector
 								v1.ResourceName(v1.ResourceMemory): resource.MustParse("100Mi"),
 							},
 						},
-						Ports:        portInfo,
-						Env:          []v1.EnvVar{{Name: "DOCKER_HOST", Value: "tcp://localhost:2375"}},
-						VolumeMounts: []v1.VolumeMount{{Name: "cert", MountPath: "/etc/kubeedge/certs"}, {Name: "conf", MountPath: "/etc/kubeedge/edgesite/conf"}},
+						Ports: portInfo,
+						Env:   []v1.EnvVar{{Name: "DOCKER_HOST", Value: "tcp://localhost:2375"}},
+						VolumeMounts: []v1.VolumeMount{{Name: "cert", MountPath: "/etc/kubeedge/certs"}, {Name: "conf", MountPath: "/etc/kubeedge/edgesite/conf"},
+							{Name: "docker-sock", MountPath: "/var/run/docker.sock"}},
 					}, {
 						Name:            "dind-daemon",
 						SecurityContext: &v1.SecurityContext{Privileged: &IsSecureCtx},
@@ -273,6 +275,7 @@ func edgesiteDeploymentSpec(imgURL, configmap string, replicas int, nodeSelector
 					{Name: "cert", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/etc/kubeedge/certs"}}},
 					{Name: "conf", VolumeSource: v1.VolumeSource{ConfigMap: &v1.ConfigMapVolumeSource{LocalObjectReference: v1.LocalObjectReference{Name: configmap}}}},
 					{Name: "docker-graph-storage", VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}}},
+					{Name: "docker-sock", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
 				},
 			},
 		},
@@ -1041,7 +1044,7 @@ func HandleEdgeSitePodDeployment(depHandler, imgURL, podHandler, nodeHandler str
 func CheckEdgesiteRunningState(apiserver string, podlist v1.PodList) {
 	Eventually(func() string {
 		for _, pod := range podlist.Items {
-			if strings.Contains(pod.Name,"edgesite") {
+			if strings.Contains(pod.Name, "edgesite") {
 				state, _ := GetPodState(apiserver + "/" + pod.Name)
 				InfoV2("PodName: %s PodStatus: %s", pod.Name, state)
 				return state
@@ -1107,12 +1110,12 @@ func newEdgesiteDeployment(name, imgUrl, nodeselector, configmap string, replica
 }
 
 // Creation of config map for edgesite
-func CreateConfigMapforEdgeSite(cmHandler, nodeHandler string, edgeNodeName string, nodeSelector string) {
+func CreateConfigMapforEdgeSite(cmHandler, nodeHandler string, edgeNodeName string, nodeSelector string, apiServer string) {
 	//Create edgecore configMaps based on the users choice of edgecore deployment.
 	configmap := "edgesite-configmap-" + GetRandomString(5)
 	//Register EdgeNodes to K8s Master
 	go RegisterNodeToMaster(edgeNodeName, nodeHandler, nodeSelector)
-	cmd := exec.Command("bash", "-x", "scripts/update_configmap.sh", "create_edgesite_config", edgeNodeName, "", configmap)
+	cmd := exec.Command("bash", "-x", "scripts/update_configmap.sh", "create_edgesite_config", edgeNodeName, apiServer, configmap)
 	err := PrintCombinedOutput(cmd)
 	Expect(err).Should(BeNil())
 	//Create ConfigMaps for Each EdgeNode created

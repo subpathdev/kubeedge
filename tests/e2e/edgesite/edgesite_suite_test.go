@@ -42,7 +42,7 @@ func TestEdgecoreAppDeployment(t *testing.T) {
 		ctx = utils.NewTestContext(utils.LoadConfig())
 		nodeName = "edgesite-node-" + utils.GetRandomString(10)
 		nodeSelector = "node-" + utils.GetRandomString(3)
-		utils.CreateConfigMapforEdgeSite(ctx.Cfg.K8SMasterForKubeEdge+constants.ConfigmapHandler, ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName,nodeSelector)
+		utils.CreateConfigMapforEdgeSite(ctx.Cfg.K8SMasterForKubeEdge+constants.ConfigmapHandler, ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName, nodeSelector, ctx.Cfg.K8SMasterForKubeEdge)
 		utils.HandleEdgeSitePodDeployment(ctx.Cfg.K8SMasterForKubeEdge+constants.DeploymentHandler, ctx.Cfg.EdgeSiteImageUrl, ctx.Cfg.K8SMasterForKubeEdge+constants.AppHandler, ctx.Cfg.K8SMasterForKubeEdge+constants.NodeHandler, nodeName)
 	})
 

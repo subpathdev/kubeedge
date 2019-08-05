@@ -35,7 +35,7 @@ cat >config.json<<END
          "image_url": ["nginx", "hello-world"],
          "dockerhubusername":"user",
          "dockerhubpassword":"password",
-         "mqttendpoint":"tcp://127.0.0.1:1884"
+         "mqttendpoint":"tcp://127.0.0.1:1884",
          "k8smasterforkubeedge":"http://$MASTER_IP:8080",
          "cloudimageurl": "kubeedge/edgecontroller:${IMAGE_TAG}",
          "edgeimageurl": "kubeedge/edgecore:${IMAGE_TAG}",
