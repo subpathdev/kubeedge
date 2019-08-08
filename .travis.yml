@@ -1,7 +1,7 @@
 language: go
 
 sudo: required
-dist: xenial
+dist: disco
 
 services:
   - docker
