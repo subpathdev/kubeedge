@@ -1,7 +1,6 @@
 language: go
 
 sudo: required
-dist: disco
 
 services:
   - docker
